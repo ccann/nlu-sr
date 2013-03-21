@@ -13,18 +13,14 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
- * Created with IntelliJ IDEA.
- * User: cody
- * Date: 3/21/13
- * Time: 1:18 PM
- * To change this template use File | Settings | File Templates.
+ * @author: ccann
  */
 public class Utterance {
 
     private int numWindows;
     private String filepath;
     private FrontEnd frontend;
-    private static int NUM_CEPSTRA = 13;
+    private static int NUM_FEATURES = 13;
 
 
     public void setNumWindows(int n){
@@ -40,10 +36,10 @@ public class Utterance {
     }
 
     /**
-     * get the cepstra arrays from the sphinx4 frontend.
-     * @return cepstra for each window
+     * get the feature arrays from the sphinx4 frontend.
+     * @return features for each window
      */
-    public LinkedList<float[]> getCepstra() {
+    public LinkedList<float[]> getFeatures() {
         initFrontend(filepath);
 
         ArrayList<float[]> floatArrs = new ArrayList<float[]>();
@@ -60,17 +56,17 @@ public class Utterance {
 
         this.numWindows = floatArrs.size();
 
-        LinkedList<float[]> cepstra = new LinkedList<float[]>();
+        LinkedList<float[]> features = new LinkedList<float[]>();
 
         for(int i=0;i<floatArrs.size();i++)
         {
-            float[] temp = new float[NUM_CEPSTRA];
-            for (int j=0;j<NUM_CEPSTRA;j++){
+            float[] temp = new float[NUM_FEATURES];
+            for (int j=0;j< NUM_FEATURES;j++){
                 temp[j] = floatArrs.get(i)[j];
             }
-            cepstra.add(temp);
+            features.add(temp);
         }
-        return cepstra;
+        return features;
     }
 
     /**
