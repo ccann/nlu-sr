@@ -1,8 +1,5 @@
 /**
- * Created with IntelliJ IDEA.
- * User: cody
- * Date: 3/19/13
- * Time: 5:05 PM
+ * @author: ccann
  */
 
 import edu.cmu.sphinx.frontend.*;
@@ -15,20 +12,23 @@ import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 
+import weka.classifiers.lazy.IBk;
+
 import java.net.URL;
 import java.util.ArrayList;
 
 public class CustomDecoder {
 
-    private FrontEnd frontend;
-    private String root = "/home/cody/IdeaProjects/nlu-speech-recognizer";
-    private String fp = "file:"+root+"resources/red.wav";
+    private static FrontEnd frontend;
+    private static String root = "/home/cody/IdeaProjects/nlu-speech-recognizer/";
+    private static String fp = "file:"+root+"resources/green.wav";
 
+    private static int NUM_CEPSTRA = 13;
 
     /**
      * initialize the Sphinx4 frontend pipeline. This pipeline does the DSP for the audio inputs.
      */
-    protected void initFrontEnd(String fp) {
+    protected static void initSphinxFrontEnd(String fp) {
         AudioFileDataSource audioDataSource = new AudioFileDataSource(3200, null);
 
         try {
@@ -40,7 +40,7 @@ public class CustomDecoder {
             System.out.println("file not found: " + fp);
         }
 
-        Preemphasizer premphasizer = new Preemphasizer(
+        Preemphasizer preemphasizer = new Preemphasizer(
                 0.97 // preemphasisFactor
         );
 
@@ -78,7 +78,7 @@ public class CustomDecoder {
 
         ArrayList pipeline = new ArrayList();
         pipeline.add(audioDataSource);
-        pipeline.add(premphasizer);
+        pipeline.add(preemphasizer);
         pipeline.add(windower);
         pipeline.add(fft);
         pipeline.add(melFilterBank);
@@ -86,12 +86,17 @@ public class CustomDecoder {
         pipeline.add(cmn);
         pipeline.add(featureExtraction);
 
-        this.frontend = new FrontEnd(pipeline);
+        frontend = new FrontEnd(pipeline);
     }
 
-    private ArrayList<float[]> getFeatures() {
+    /**
+     * get NUM_CEPSTRA cepstra from the sphinx4 frontend.
+     * @return cepstra for each window
+     */
+    private static ArrayList<float[]> getCepstra() {
         ArrayList<float[]> floatArrs = new ArrayList<float[]>();
         Data data = frontend.getData();
+
 
         while (! (data instanceof DataEndSignal)){
             if (! (data instanceof DataStartSignal))
@@ -99,18 +104,47 @@ public class CustomDecoder {
                 // cast data to FloatData and retrieve the float array, add it to floatArrs
                 floatArrs.add(((FloatData) data).getValues());
             }
+            data = frontend.getData();
         }
-        return floatArrs;
+
+        ArrayList<float[]> cepstra = new ArrayList<float[]>(floatArrs.size());
+
+        for(int i=0;i<floatArrs.size();i++)
+        {
+            float[] temp = new float[NUM_CEPSTRA];
+            for (int j=0;j<NUM_CEPSTRA;j++){
+                temp[j] = floatArrs.get(i)[j];
+            }
+            cepstra.add(temp);
+        }
+        return cepstra;
     }
 
-    private void main(){
-        initFrontEnd(fp);
-        ArrayList<float[]> features = getFeatures();
+
+//    private static ArrayList<Integer> compressCepstra(ArrayList<float[]> cepstra){
+//
+//    }
+
+    /**
+     * print the FloatData features (cepstra, in this case)
+     * @param features  the features to print
+     */
+    private static void printFeatures(ArrayList<float[]> features) {
         for(int i=0;i<features.size();i++){
-           //System.out.println(features.);
+            for(int j=0;j<features.get(i).length;j++){
+                System.out.print(features.get(i)[j] + " ");
+            }
+            System.out.println();
         }
-
     }
+
+    public static void main(String args[]) {
+        initSphinxFrontEnd(fp);
+        ArrayList<float[]> features = getCepstra();
+        printFeatures(features);
+    }
+
+
 
 
 
