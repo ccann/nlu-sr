@@ -7,6 +7,7 @@ import weka.classifiers.lazy.IBk;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
@@ -18,13 +19,14 @@ public class CustomDecoder {
 
     private static int NUM_BINS = 5;
     private static int NUM_FEATURES = 5;
-    private static int TRAINING_SET_SIZE = 45;
+    private static int TRAINING_SET_SIZE = 42;
     private static Instances[] trainingSets;
     private static Instance testInstance;
     private static ArrayList<Attribute> fv;
     private static int k = 3;  // should be odd
     private static ArrayList<Classifier> binClassifiers = new ArrayList<Classifier>(NUM_BINS);
     private static String[] dictionary = {"red","green","white"};
+    private static ArrayList<Integer> score = new ArrayList<Integer>(dictionary.length);
 
     /**
      * print the features
@@ -166,7 +168,7 @@ public class CustomDecoder {
         File[] files = dir.listFiles();
 
         for (File file : files){
-            if(file.isFile()){
+            if(file.isFile() && (!file.getName().contains("DS"))){
                 Utterance utt = new Utterance(fp + file.getName());
 
                 ArrayList<ArrayList<Float>> bins = getBinnedFeatures(utt);
@@ -198,11 +200,13 @@ public class CustomDecoder {
             testInstance = createInstance(utt, getMetaFeatures(bins.get(i)));
             // specify test instance belongs to the training set so that it can inherit from that set description
             testInstance.setDataset(trainingSets[0]);
+            double[] dist;
             try{
-                double[] dist = binClassifiers.get(i).distributionForInstance(testInstance);
-                System.out.println("red: " + dist[0] +
-                                   "  green: " + dist[1] +
-                                   "  white: " + dist[2]);
+                dist = binClassifiers.get(i).distributionForInstance(testInstance);
+//                System.out.println("red: " + dist[0] +
+//                                   "  green: " + dist[1] +
+//                                   "  white: " + dist[2]);
+                updateScore(dist);
             }
             catch(Exception ex){
                 System.out.println("Problem with testing test instance");
@@ -210,12 +214,29 @@ public class CustomDecoder {
         }
     }
 
+    private static void updateScore(double[] dist){
+        ArrayList<Double> d = new ArrayList<Double>();
+        for(int i = 0; i < dist.length;i++){
+            d.add(dist[i]);
+        }
+        int scoreIndex = d.indexOf(Collections.max(d));
+        score.set(scoreIndex, score.get(scoreIndex) + 1);
+    }
+
     public static void main(String args[]) {
         trainingSets = new Instances[NUM_BINS];
         initTrainingSets();
         trainClassifiers();
-        Utterance testUtt = new Utterance("/Users/cody/dev/nlu-speech-recognizer/resources/green1.wav");
+        Utterance testUtt = new Utterance("/Users/cody/dev/nlu-speech-recognizer/test/red7.wav");
+        for (int i = 0; i < dictionary.length;i++){
+            score.add(0);
+        }
+
         test(testUtt);
+        double highestScore = Collections.max(score);
+        System.out.println(dictionary[score.indexOf(Collections.max(score))] + " " +
+                ((highestScore/(double)NUM_BINS)* 100) + "%" );
+
         // @TODO: create scorer: tally each bin classification
         // @TODO: pipeline for testing, might need some new audio files
 
