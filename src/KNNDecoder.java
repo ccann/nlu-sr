@@ -1,5 +1,25 @@
 /**
  * @author: ccann
+ *
+ * This program is a fairly simple speech recognizer built for
+ * CS 150-06: Situated Natural Language Understanding on Robots. It reads speech from a file (.wav) and
+ * outputs the recognized utterance. Right now the dictionary of words includes three color words:
+ * red, green and white.
+ *
+ * The decoder operates as follows:
+ *    divide the utterance (e.g. "red") into NUM_BINS bins. Each bin represents a portion of the utterance
+ *                                               "red" ==>       [ bin1 -- bin2 -- bin3 -- bin4 -- bin5 ]
+ *    Each bin contains acoustic features derived from a portion of the input utterance. These features are currently
+ *    composed of cepstra, which are derived from the Sphinx4 frontend:
+ *    http://cmusphinx.sourceforge.net/sphinx4/javadoc/edu/cmu/sphinx/frontend/feature/DeltasFeatureExtractor.html
+ *
+ *    A k-nearest-neighbors classifier (WEKA's IBk) is trained on each individual bin, i.e. on the features of each
+ *    portion (1/5 if NUM_BINS == 5) of each utterance in the training set. During testing each classifier classifies
+ *    a portion of the test utterance as one of the words in the dictionary (e.g. red, green, or white). The
+ *    cumulative classification tally for each dictionary word is retained in the scores list. The KNNDecoder
+ *    determines the most likely classification of the whole utterance based on the dictionary word with the highest
+ *    score (i.e. highest number of respective bin classifications) relative to the others.
+ *
  */
 
 import weka.classifiers.Classifier;
@@ -13,9 +33,10 @@ import java.util.LinkedList;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import weka.core.*;
 
-public class CustomDecoder {
+public class KNNDecoder {
 
-    private static String fp = "resources/";
+    private static String pathToTrainingFiles = "resources/";
+    private static String pathToTestFile = "/Users/cody/dev/nlu-speech-recognizer/test/red7.wav";
 
     private static int NUM_BINS = 5;
     private static int NUM_FEATURES = 5;
@@ -150,12 +171,12 @@ public class CustomDecoder {
      * build the KNN classifier for each bin
      */
     private static void trainClassifiers(){
-        File dir = new File(fp);
+        File dir = new File(pathToTrainingFiles);
         File[] files = dir.listFiles();
 
         for (File file : files){
             if(file.isFile() && (!file.getName().contains("DS"))){
-                Utterance utt = new Utterance(fp + file.getName());
+                Utterance utt = new Utterance(pathToTrainingFiles + file.getName());
 
                 ArrayList<ArrayList<Float>> bins = getBinnedFeatures(utt);
                 for(int i=0; i < NUM_BINS; i++){
@@ -218,18 +239,22 @@ public class CustomDecoder {
     }
 
     public static void main(String args[]) {
+        // TRAINING
         trainingSets = new Instances[NUM_BINS];
         initTrainingSets();
         trainClassifiers();
-        Utterance testUtt = new Utterance("/Users/cody/dev/nlu-speech-recognizer/test/red7.wav");
+
+        // TESTING
+        Utterance testUtt = new Utterance(pathToTestFile);
         for (int i = 0; i < dictionary.length;i++){
             score.add(0);
         }
-
         test(testUtt);
+
+        // SCORING and REPORTING
         double highestScore = Collections.max(score);
         System.out.println(dictionary[score.indexOf(Collections.max(score))] + " " +
-                ((highestScore/(double)NUM_BINS)* 100) + "%" );
+                (int)highestScore + "/5" );
 
     }
 

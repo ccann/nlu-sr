@@ -14,7 +14,21 @@ import java.util.LinkedList;
 
 /**
  * @author: ccann
+ *
+ * This class instantiate Utterance objects for .wav files. A Sphinx4 frontend is constructed for the input file
+ * with access to the list of "features" for NLP.
+ *
+ * frontend pipeline:
+ *   1. AudioDataSource          // the source of the audio data
+ *   2. Preemphasizer            // high pass filter that compensates for attenuation
+ *   3. Windower                 // slices up a the signal into a number of overlapping windows
+ *   4. FFT                      // computes the discrete fourier transform of the input signal
+ *   5. MelFrequencyFilterBank   // filters an input power spectrum through a bank of number of mel-filters.
+ *   6. DiscreteCosineTransform  // applies a logarithm and then a Discrete Cosine Transform (DCT) to the input data
+ *   7. LiveCMN                  // subtracts the mean of all the input so far from the audio data
+ *   8. DeltasFeatureExtractor   // computes the delta and double delta of input cepstrum
  */
+
 public class Utterance {
 
     private int numWindows;
