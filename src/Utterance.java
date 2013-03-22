@@ -22,11 +22,6 @@ public class Utterance {
     private FrontEnd frontend;
     private static int NUM_FEATURES = 13;
 
-
-    public void setNumWindows(int n){
-        numWindows = n;
-    }
-
     public int getNumWindows(){
         return numWindows;
     }
@@ -133,6 +128,10 @@ public class Utterance {
         frontend = new FrontEnd(pipeline);
     }
 
+    /**
+     * constructs an utterance from the file specified. Initializes a sphinx4 frontend.
+     * @param f  path to the .wav file
+     */
     public Utterance(String f){
         this.filepath = f;
         initFrontend(this.filepath);

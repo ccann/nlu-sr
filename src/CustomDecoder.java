@@ -29,22 +29,9 @@ public class CustomDecoder {
     private static ArrayList<Integer> score = new ArrayList<Integer>(dictionary.length);
 
     /**
-     * print the features
-     * @param features  the features to print
-     */
-    private static void printFeatures(ArrayList<float[]> features) {
-        for(int i=0;i<features.size();i++){
-            for(int j=0;j<features.get(i).length;j++){
-                System.out.print(features.get(i)[j] + " ");
-            }
-            System.out.println();
-        }
-    }
-
-    /**
-     * dumps the cepstra from the cepstra vectors into NUM_BINS bins
-     * @param utt  the utterance from which we're getting the cepstra
-     * @return a list containing the the cepstra bins
+     * dumps the features from the feature vectors into NUM_BINS bins
+     * @param utt  the utterance from which we're getting the features
+     * @return a list containing the the feature bins
      */
     private static ArrayList<ArrayList<Float>> getBinnedFeatures (Utterance utt){
 
@@ -59,7 +46,7 @@ public class CustomDecoder {
             ArrayList<Float> bin = new ArrayList<Float>(binSize);
             for(int j =0; j < binSize ; j++){
 
-                // pop first feature vector in cepstraVectors
+                // pop first feature vector in featureVectors
                 float[] vec = featureVectors.remove();
                 for (float feature : vec){
                     // add the floats from the vector to the bin
@@ -81,8 +68,8 @@ public class CustomDecoder {
     }
 
     /**
-     * Derive a meta feature vector for each bin
-     *
+     * Derive a meta feature vector for each bin. This implementation is pretty naive as it
+     * uses max,min,mean,stdev, and variance across a collection of cepstra
      */
     private static double[] getMetaFeatures(ArrayList<Float> bin){
 
@@ -132,7 +119,6 @@ public class CustomDecoder {
             trainingSets[i] = new Instances("Training",fv, TRAINING_SET_SIZE);
             trainingSets[i].setClassIndex(NUM_FEATURES);
         }
-
 
     }
 
@@ -193,6 +179,10 @@ public class CustomDecoder {
         }
     }
 
+    /**
+     * test an utterance against the training set
+     * @param utt  the utterance to be tested
+     */
     private static void test(Utterance utt){
 
         ArrayList<ArrayList<Float>> bins = getBinnedFeatures(utt);
@@ -214,6 +204,10 @@ public class CustomDecoder {
         }
     }
 
+    /**
+     * update the score of each word in the dictionary
+     * @param dist  the word probability distribution
+     */
     private static void updateScore(double[] dist){
         ArrayList<Double> d = new ArrayList<Double>();
         for(int i = 0; i < dist.length;i++){
@@ -236,9 +230,6 @@ public class CustomDecoder {
         double highestScore = Collections.max(score);
         System.out.println(dictionary[score.indexOf(Collections.max(score))] + " " +
                 ((highestScore/(double)NUM_BINS)* 100) + "%" );
-
-        // @TODO: create scorer: tally each bin classification
-        // @TODO: pipeline for testing, might need some new audio files
 
     }
 
