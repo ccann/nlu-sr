@@ -76,7 +76,7 @@ public class Utterance {
         AudioFileDataSource audioDataSource = new AudioFileDataSource(3200, null);
 
         try {
-            URL audioURL = new URL(fp);
+            URL audioURL = new URL("file:"+fp);
             audioDataSource.setAudioFile(audioURL, null);
         }
         catch (Exception ex)

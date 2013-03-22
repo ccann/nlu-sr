@@ -14,16 +14,16 @@ import weka.core.*;
 
 public class CustomDecoder {
 
-    private static String fp = "file:resources/";
+    private static String fp = "resources/";
 
     private static int NUM_BINS = 5;
-    // number of features includes the "class" feature
-    private static int NUM_FEATURES = 6;
+    private static int NUM_FEATURES = 5;
     private static int TRAINING_SET_SIZE = 45;
-    private static Instances trainingSet;
+    private static Instances[] trainingSets;
+    private static Instance testInstance;
     private static ArrayList<Attribute> fv;
     private static int k = 3;  // should be odd
-    private static ArrayList<Classifier> binClassifiers;
+    private static ArrayList<Classifier> binClassifiers = new ArrayList<Classifier>(NUM_BINS);
     private static String[] dictionary = {"red","green","white"};
 
     /**
@@ -104,7 +104,7 @@ public class CustomDecoder {
     /**
      * initialize the training set attributes
      */
-    private static void initTrainingSet(){
+    private static void initTrainingSets(){
 
         Attribute max = new Attribute("max");
         Attribute min = new Attribute("min");
@@ -113,9 +113,12 @@ public class CustomDecoder {
         Attribute variance = new Attribute("variance");
 
         ArrayList<String> classes = new ArrayList<String>(dictionary.length);
+        for(int i=0; i<dictionary.length;i++){
+            classes.add(dictionary[i]);
+        }
         Attribute classAttribute = new Attribute("word", classes);
 
-        fv = new ArrayList<Attribute>(NUM_FEATURES);
+        fv = new ArrayList<Attribute>(NUM_FEATURES+1);
         fv.add(max);
         fv.add(min);
         fv.add(mean);
@@ -123,18 +126,22 @@ public class CustomDecoder {
         fv.add(variance);
         fv.add(classAttribute);
 
-        trainingSet = new Instances("Training",fv, TRAINING_SET_SIZE);
-        trainingSet.setClassIndex(NUM_FEATURES);
+        for (int i =0; i < trainingSets.length; i++){
+            trainingSets[i] = new Instances("Training",fv, TRAINING_SET_SIZE);
+            trainingSets[i].setClassIndex(NUM_FEATURES);
+        }
+
+
     }
 
     /**
-     * add the meta features for this utterance to the training set
+     * add the meta features for this utterance to the training or test set
      * @param utt  utterance from which the meta features came
      * @param metaFeatures  meta features to add to training set
      */
-    private static void addToTrainingSet(Utterance utt, double[] metaFeatures){
+    private static Instance createInstance(Utterance utt, double[] metaFeatures){
 
-        DenseInstance in = new DenseInstance(NUM_FEATURES);
+        DenseInstance in = new DenseInstance(NUM_FEATURES+1);
         in.setValue(fv.get(0), metaFeatures[0]);
         in.setValue(fv.get(1), metaFeatures[1]);
         in.setValue(fv.get(2), metaFeatures[2]);
@@ -148,7 +155,7 @@ public class CustomDecoder {
                 break;
             }
         }
-        trainingSet.add(in);
+        return in;
     }
 
     /**
@@ -160,29 +167,55 @@ public class CustomDecoder {
 
         for (File file : files){
             if(file.isFile()){
-                Utterance utt = new Utterance(file.getName());
-                for(ArrayList<Float> bin : getBinnedFeatures(utt)){
+                Utterance utt = new Utterance(fp + file.getName());
 
-                    // create a classifier for each bin
-                    addToTrainingSet(utt, getMetaFeatures(bin));
-                    try{
-                        Classifier knn = new IBk(k);
-                        knn.buildClassifier(trainingSet);
-
-                        binClassifiers.add(knn);
-                    }
-                    catch(Exception ex){
-                        System.out.println("ERROR: classifier not being built");
-                    }
+                ArrayList<ArrayList<Float>> bins = getBinnedFeatures(utt);
+                for(int i=0; i < NUM_BINS; i++){
+                    // add meta features of bin to respective training set
+                    Instance newInst = createInstance(utt, getMetaFeatures(bins.get(i)));
+                    trainingSets[i].add(newInst);
                 }
+            }
+        }
+
+        for (Instances trainingSet : trainingSets) {
+            // create a classifier for each bin
+            try{
+                Classifier knn = new IBk(k);
+                knn.buildClassifier(trainingSet);
+                binClassifiers.add(knn);
+            }
+            catch(Exception ex){
+                System.out.println("ERROR: classifier NOT generated successfully");
+            }
+        }
+    }
+
+    private static void test(Utterance utt){
+
+        ArrayList<ArrayList<Float>> bins = getBinnedFeatures(utt);
+        for(int i = 0; i<NUM_BINS; i++){
+            testInstance = createInstance(utt, getMetaFeatures(bins.get(i)));
+            // specify test instance belongs to the training set so that it can inherit from that set description
+            testInstance.setDataset(trainingSets[0]);
+            try{
+                double[] dist = binClassifiers.get(i).distributionForInstance(testInstance);
+                System.out.println("red: " + dist[0] +
+                                   "  green: " + dist[1] +
+                                   "  white: " + dist[2]);
+            }
+            catch(Exception ex){
+                System.out.println("Problem with testing test instance");
             }
         }
     }
 
     public static void main(String args[]) {
-
-        initTrainingSet();
+        trainingSets = new Instances[NUM_BINS];
+        initTrainingSets();
         trainClassifiers();
+        Utterance testUtt = new Utterance("/Users/cody/dev/nlu-speech-recognizer/resources/green1.wav");
+        test(testUtt);
         // @TODO: create scorer: tally each bin classification
         // @TODO: pipeline for testing, might need some new audio files
 
