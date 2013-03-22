@@ -36,15 +36,15 @@ import weka.core.*;
 public class KNNDecoder {
 
     private static String pathToTrainingFiles = "resources/";
-    private static String pathToTestFile = "/Users/cody/dev/nlu-speech-recognizer/test/red7.wav";
+    private static String pathToTestingFiles = "test/";
 
     private static int NUM_BINS = 5;
-    private static int NUM_FEATURES = 5;
-    private static int TRAINING_SET_SIZE = 42;
+    private static int NUM_FEATURES = 3;
+    private static int TRAINING_SET_SIZE = 127;
     private static Instances[] trainingSets;
     private static Instance testInstance;
     private static ArrayList<Attribute> fv;
-    private static int k = 3;  // should be odd
+    private static int k = 7;  // should be odd
     private static ArrayList<Classifier> binClassifiers = new ArrayList<Classifier>(NUM_BINS);
     private static String[] dictionary = {"red","green","white"};
     private static ArrayList<Integer> score = new ArrayList<Integer>(dictionary.length);
@@ -105,7 +105,9 @@ public class KNNDecoder {
         double stdev = s.getStandardDeviation();
         double variance = s.getVariance();
 
-        double[] metaFeatures = {max, min, mean, stdev, variance};
+        //double[] metaFeatures = {max, min, mean, stdev, variance};
+        double [] metaFeatures = {max,min,mean};
+
         return metaFeatures;
     }
 
@@ -132,8 +134,8 @@ public class KNNDecoder {
         fv.add(max);
         fv.add(min);
         fv.add(mean);
-        fv.add(stdev);
-        fv.add(variance);
+        //fv.add(stdev);
+        //fv.add(variance);
         fv.add(classAttribute);
 
         for (int i =0; i < trainingSets.length; i++){
@@ -154,13 +156,13 @@ public class KNNDecoder {
         in.setValue(fv.get(0), metaFeatures[0]);
         in.setValue(fv.get(1), metaFeatures[1]);
         in.setValue(fv.get(2), metaFeatures[2]);
-        in.setValue(fv.get(3), metaFeatures[3]);
-        in.setValue(fv.get(4), metaFeatures[4]);
+      //  in.setValue(fv.get(3), metaFeatures[3]);
+      //  in.setValue(fv.get(4), metaFeatures[4]);
 
         String filename = utt.getFilePath();
         for (String word : dictionary){
             if (filename.contains(word)){
-                in.setValue(fv.get(5),word);
+                in.setValue(fv.get(NUM_FEATURES),word);
                 break;
             }
         }
@@ -214,9 +216,9 @@ public class KNNDecoder {
             double[] dist;
             try{
                 dist = binClassifiers.get(i).distributionForInstance(testInstance);
-//                System.out.println("red: " + dist[0] +
-//                                   "  green: " + dist[1] +
-//                                   "  white: " + dist[2]);
+                System.out.println("red: " + dist[0] +
+                                   "  green: " + dist[1] +
+                                   "  white: " + dist[2]);
                 updateScore(dist);
             }
             catch(Exception ex){
@@ -244,22 +246,29 @@ public class KNNDecoder {
         initTrainingSets();
         trainClassifiers();
 
-        // TESTING
-        Utterance testUtt = new Utterance(pathToTestFile);
-        for (int i = 0; i < dictionary.length;i++){
-            score.add(0);
+
+        File dir = new File(pathToTestingFiles);
+        File[] files = dir.listFiles();
+        for (File file : files){
+            if(file.isFile() && (!file.getName().contains("DS"))){
+
+                // TESTING
+                Utterance testUtt = new Utterance(pathToTestingFiles+file.getName());
+                System.out.println("\nTesting: " + file.getName());
+                for (int i = 0; i < dictionary.length;i++){
+                    score.add(0);
+                }
+                test(testUtt);
+
+                // SCORING and REPORTING
+                double highestScore = Collections.max(score);
+                System.out.println(dictionary[score.indexOf(Collections.max(score))] + " " +
+                        (int)highestScore + "/5" );
+
+                score = new ArrayList<Integer>(dictionary.length);
+
+            }
         }
-        test(testUtt);
-
-        // SCORING and REPORTING
-        double highestScore = Collections.max(score);
-        System.out.println(dictionary[score.indexOf(Collections.max(score))] + " " +
-                (int)highestScore + "/5" );
-
     }
-
-
-
-
-
 }
+
