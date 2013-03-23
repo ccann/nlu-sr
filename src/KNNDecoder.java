@@ -39,7 +39,7 @@ public class KNNDecoder {
     private static String pathToTestingFiles = "test/";
 
     private static int NUM_BINS = 5;
-    private static int NUM_FEATURES = 3;
+    private static int NUM_FEATURES = 5;
     private static int TRAINING_SET_SIZE = 127;
     private static Instances[] trainingSets;
     private static Instance testInstance;
@@ -47,7 +47,7 @@ public class KNNDecoder {
     private static int k = 7;  // should be odd
     private static ArrayList<Classifier> binClassifiers = new ArrayList<Classifier>(NUM_BINS);
     private static String[] dictionary = {"red","green","white"};
-    private static ArrayList<Integer> score = new ArrayList<Integer>(dictionary.length);
+    private static ArrayList<Double> score = new ArrayList<Double>(dictionary.length);
 
     /**
      * dumps the features from the feature vectors into NUM_BINS bins
@@ -105,8 +105,8 @@ public class KNNDecoder {
         double stdev = s.getStandardDeviation();
         double variance = s.getVariance();
 
-        //double[] metaFeatures = {max, min, mean, stdev, variance};
-        double [] metaFeatures = {max,min,mean};
+        double[] metaFeatures = {max, min, mean, stdev, variance};
+        //double [] metaFeatures = {max,min,mean};
 
         return metaFeatures;
     }
@@ -134,8 +134,8 @@ public class KNNDecoder {
         fv.add(max);
         fv.add(min);
         fv.add(mean);
-        //fv.add(stdev);
-        //fv.add(variance);
+        fv.add(stdev);
+        fv.add(variance);
         fv.add(classAttribute);
 
         for (int i =0; i < trainingSets.length; i++){
@@ -216,9 +216,9 @@ public class KNNDecoder {
             double[] dist;
             try{
                 dist = binClassifiers.get(i).distributionForInstance(testInstance);
-                System.out.println("red: " + dist[0] +
-                                   "  green: " + dist[1] +
-                                   "  white: " + dist[2]);
+                System.out.println("red: " + String.format("%.4g",dist[0]) +
+                                   "  green: " + String.format("%.4g",dist[1]) +
+                                   "  white: " + String.format("%.4g",dist[2]));
                 updateScore(dist);
             }
             catch(Exception ex){
@@ -237,7 +237,7 @@ public class KNNDecoder {
             d.add(dist[i]);
         }
         int scoreIndex = d.indexOf(Collections.max(d));
-        score.set(scoreIndex, score.get(scoreIndex) + 1);
+        score.set(scoreIndex, score.get(scoreIndex) + d.get(scoreIndex));
     }
 
     public static void main(String args[]) {
@@ -256,16 +256,16 @@ public class KNNDecoder {
                 Utterance testUtt = new Utterance(pathToTestingFiles+file.getName());
                 System.out.println("\nTesting: " + file.getName());
                 for (int i = 0; i < dictionary.length;i++){
-                    score.add(0);
+                    score.add(0.00);
                 }
                 test(testUtt);
 
                 // SCORING and REPORTING
                 double highestScore = Collections.max(score);
-                System.out.println(dictionary[score.indexOf(Collections.max(score))] + " " +
-                        (int)highestScore + "/5" );
+                System.out.println(dictionary[score.indexOf(Collections.max(score))].toUpperCase() + " " +
+                        String.format("%.4g",highestScore) + " / 5.00" );
 
-                score = new ArrayList<Integer>(dictionary.length);
+                score = new ArrayList<Double>(dictionary.length);
 
             }
         }
