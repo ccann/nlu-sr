@@ -19,7 +19,8 @@ of words includes three color words: red, green and white.
   cepstra. Currently the delta and double delta are ignored.
 
 - Meta feature implementation is currently VERY naive. Each meta-feature vector consists
-  of the following: mean, min, max, stdev, and variance of the cepstra.
+  of the following: mean, min, max, stdev, and variance of the cepstra. Currently the
+  stdev and variance are not included in the feature vector.
 
 - A k-nearest-neighbors (KNN) classifier (using WEKA's IBk) is trained on each individual
   bin, i.e. on the features of each portion (1/5 if NUM_BINS == 5) of each utterance in

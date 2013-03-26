@@ -39,7 +39,7 @@ public class KNNDecoder {
     private static String pathToTestingFiles = "test/";
 
     private static int NUM_BINS = 5;
-    private static int NUM_FEATURES = 5;
+    private static int NUM_FEATURES = 3;
     private static int TRAINING_SET_SIZE = 127;
     private static Instances[] trainingSets;
     private static Instance testInstance;
@@ -102,11 +102,11 @@ public class KNNDecoder {
         double max = s.getMax();
         double min = s.getMin();
         double mean = s.getMean();
-        double stdev = s.getStandardDeviation();
-        double variance = s.getVariance();
+        //double stdev = s.getStandardDeviation();
+        //double variance = s.getVariance();
 
-        double[] metaFeatures = {max, min, mean, stdev, variance};
-        //double [] metaFeatures = {max,min,mean};
+        //double[] metaFeatures = {max, min, mean, stdev, variance};
+        double [] metaFeatures = {max,min,mean};
 
         return metaFeatures;
     }
@@ -121,8 +121,8 @@ public class KNNDecoder {
         Attribute max = new Attribute("max");
         Attribute min = new Attribute("min");
         Attribute mean = new Attribute("mean");
-        Attribute stdev = new Attribute("stdev");
-        Attribute variance = new Attribute("variance");
+        //Attribute stdev = new Attribute("stdev");
+        //Attribute variance = new Attribute("variance");
 
         ArrayList<String> classes = new ArrayList<String>(dictionary.length);
         for(int i=0; i<dictionary.length;i++){
@@ -134,8 +134,8 @@ public class KNNDecoder {
         fv.add(max);
         fv.add(min);
         fv.add(mean);
-        fv.add(stdev);
-        fv.add(variance);
+        //fv.add(stdev);
+        //fv.add(variance);
         fv.add(classAttribute);
 
         for (int i =0; i < trainingSets.length; i++){
@@ -156,8 +156,8 @@ public class KNNDecoder {
         in.setValue(fv.get(0), metaFeatures[0]);
         in.setValue(fv.get(1), metaFeatures[1]);
         in.setValue(fv.get(2), metaFeatures[2]);
-      //  in.setValue(fv.get(3), metaFeatures[3]);
-      //  in.setValue(fv.get(4), metaFeatures[4]);
+        //in.setValue(fv.get(3), metaFeatures[3]);
+        //n.setValue(fv.get(4), metaFeatures[4]);
 
         String filename = utt.getFilePath();
         for (String word : dictionary){
