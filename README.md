@@ -2,7 +2,7 @@
 
 @author: ccann
 
-This is an incredibly simple speech recognizer built for CS 150-06: Situated Natural
+This is a simple incremental speech recognizer built for CS 150-06: Situated Natural
 Language Understanding on Robots at Tufts University during my M.S. degree. It reads
 speech from a file (.wav) and outputs the recognized utterance. Right now the dictionary
 of words includes three color words: red, green and white.

@@ -263,7 +263,7 @@ public class KNNDecoder {
                 // SCORING and REPORTING
                 double highestScore = Collections.max(score);
                 System.out.println(dictionary[score.indexOf(Collections.max(score))].toUpperCase() + " " +
-                        String.format("%.4g",highestScore) + " / 5.00" );
+                        String.format("%.4g",highestScore) + " / " + (double)NUM_BINS);
 
                 score = new ArrayList<Double>(dictionary.length);
 
